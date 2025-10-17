@@ -74,7 +74,7 @@ func TestExpandPath(t *testing.T) {
 func TestGetGlobalContext(t *testing.T) {
 	t.Run("returns empty string when file does not exist", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		t.Setenv("XDG_DATA_HOME", tmpDir)
+		t.Setenv("XDG_CONFIG_HOME", tmpDir)
 
 		result := getGlobalContext()
 		require.Empty(t, result)
@@ -82,7 +82,7 @@ func TestGetGlobalContext(t *testing.T) {
 
 	t.Run("returns content when file exists", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		t.Setenv("XDG_DATA_HOME", tmpDir)
+		t.Setenv("XDG_CONFIG_HOME", tmpDir)
 
 		globalPath := config.GlobalContextPath()
 		require.NoError(t, os.MkdirAll(filepath.Dir(globalPath), 0o755))
@@ -97,7 +97,7 @@ func TestGetGlobalContext(t *testing.T) {
 
 	t.Run("returns empty string when file is empty", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		t.Setenv("XDG_DATA_HOME", tmpDir)
+		t.Setenv("XDG_CONFIG_HOME", tmpDir)
 
 		globalPath := config.GlobalContextPath()
 		require.NoError(t, os.MkdirAll(filepath.Dir(globalPath), 0o755))
@@ -110,7 +110,7 @@ func TestGetGlobalContext(t *testing.T) {
 
 func TestCoderPromptWithGlobalContext(t *testing.T) {
 	tmpDir := t.TempDir()
-	t.Setenv("XDG_DATA_HOME", tmpDir)
+	t.Setenv("XDG_CONFIG_HOME", tmpDir)
 
 	workDir := t.TempDir()
 	_, err := config.Init(workDir, filepath.Join(workDir, ".crush"), false)
