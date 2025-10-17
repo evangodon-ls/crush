@@ -110,10 +110,6 @@ func boolToYesNo(b bool) string {
 
 func getGlobalContext() string {
 	globalPath := config.GlobalContextPath()
-	if _, err := os.Stat(globalPath); err != nil {
-		return ""
-	}
-
 	content, err := os.ReadFile(globalPath)
 	if err != nil {
 		return ""
