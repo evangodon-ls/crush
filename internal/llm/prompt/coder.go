@@ -32,9 +32,18 @@ func CoderPrompt(p string, contextFiles ...string) string {
 
 	basePrompt = fmt.Sprintf("%s\n\n%s\n%s", basePrompt, envInfo, lspInformation())
 
-	contextContent := getContextFromPaths(config.Get().WorkingDir(), contextFiles)
-	if contextContent != "" {
-		return fmt.Sprintf("%s\n\n# Project-Specific Context\n Make sure to follow the instructions in the context below\n%s", basePrompt, contextContent)
+	globalContext := getGlobalContext()
+	projectContext := getContextFromPaths(config.Get().WorkingDir(), contextFiles)
+
+	if globalContext != "" || projectContext != "" {
+		contextSection := "# Project-Specific Context\n Make sure to follow the instructions in the context below\n"
+		if globalContext != "" {
+			contextSection += "\n## Global Context\n" + globalContext
+		}
+		if projectContext != "" {
+			contextSection += "\n## Project Context\n" + projectContext
+		}
+		return fmt.Sprintf("%s\n\n%s", basePrompt, contextSection)
 	}
 	return basePrompt
 }
@@ -97,4 +106,22 @@ func boolToYesNo(b bool) string {
 		return "Yes"
 	}
 	return "No"
+}
+
+func getGlobalContext() string {
+	globalPath := config.GlobalContextPath()
+	if _, err := os.Stat(globalPath); err != nil {
+		return ""
+	}
+
+	content, err := os.ReadFile(globalPath)
+	if err != nil {
+		return ""
+	}
+
+	if len(content) == 0 {
+		return ""
+	}
+
+	return "# From:" + globalPath + "\n" + string(content)
 }

@@ -20,6 +20,7 @@ import (
 const (
 	appName              = "crush"
 	defaultDataDirectory = ".crush"
+	globalContextFile    = "GLOBAL-CRUSH.md"
 )
 
 var defaultContextPaths = []string{
