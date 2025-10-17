@@ -660,6 +660,25 @@ func GlobalConfigData() string {
 	return filepath.Join(home.Dir(), ".local", "share", appName, fmt.Sprintf("%s.json", appName))
 }
 
+// GlobalContextPath returns the path to the global context file.
+// This file contains context that is always available across all projects.
+func GlobalContextPath() string {
+	xdgDataHome := os.Getenv("XDG_DATA_HOME")
+	if xdgDataHome != "" {
+		return filepath.Join(xdgDataHome, appName, globalContextFile)
+	}
+
+	if runtime.GOOS == "windows" {
+		localAppData := os.Getenv("LOCALAPPDATA")
+		if localAppData == "" {
+			localAppData = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local")
+		}
+		return filepath.Join(localAppData, appName, globalContextFile)
+	}
+
+	return filepath.Join(home.Dir(), ".local", "share", appName, globalContextFile)
+}
+
 func assignIfNil[T any](ptr **T, val T) {
 	if *ptr == nil {
 		*ptr = &val
