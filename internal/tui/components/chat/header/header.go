@@ -153,7 +153,7 @@ func (h *header) details(availWidth int) string {
 		cwd = ""
 	}
 
-	sessionTitle = s.Base.Render(sessionTitle)
+	sessionTitle = s.Muted.Render(sessionTitle)
 	cwd = s.Muted.Render(cwd)
 
 	var result strings.Builder
