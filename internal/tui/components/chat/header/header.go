@@ -134,15 +134,38 @@ func (h *header) details(availWidth int) string {
 
 	dot := s.Subtle.Render(" • ")
 	metadata := strings.Join(parts, dot)
-	metadata = dot + metadata
 
-	// Truncate cwd if necessary, and insert it at the beginning.
+	sessionTitle := h.session.Title
 	const dirTrimLimit = 4
 	cwd := fsext.DirTrim(fsext.PrettyPath(config.Get().WorkingDir()), dirTrimLimit)
-	cwd = ansi.Truncate(cwd, max(0, availWidth-lipgloss.Width(metadata)), "…")
+
+	metadataWidth := lipgloss.Width(metadata)
+	dotWidth := lipgloss.Width(dot)
+	fixedWidth := metadataWidth + (2 * dotWidth)
+	availForTitles := max(0, availWidth-fixedWidth)
+
+	sessionTitleLen := ansi.StringWidth(sessionTitle)
+	if sessionTitleLen <= availForTitles {
+		availForCwd := availForTitles - sessionTitleLen
+		cwd = ansi.Truncate(cwd, max(0, availForCwd), "…")
+	} else {
+		sessionTitle = ansi.Truncate(sessionTitle, availForTitles, "…")
+		cwd = ""
+	}
+
+	sessionTitle = s.Base.Render(sessionTitle)
 	cwd = s.Muted.Render(cwd)
 
-	return cwd + metadata
+	var result strings.Builder
+	result.WriteString(sessionTitle)
+	if cwd != "" {
+		result.WriteString(dot)
+		result.WriteString(cwd)
+	}
+	result.WriteString(dot)
+	result.WriteString(metadata)
+
+	return result.String()
 }
 
 func (h *header) SetDetailsOpen(open bool) {
