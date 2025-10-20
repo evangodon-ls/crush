@@ -22,7 +22,7 @@ type SessionDialog interface {
 	dialogs.DialogModel
 }
 
-type SessionsList = list.FilterableList[list.CompletionItem[session.Session]]
+type SessionsList = list.FilterableList[SessionItem]
 
 type sessionDialogCmp struct {
 	selectedInx       int
@@ -45,10 +45,11 @@ func NewSessionDialogCmp(sessions []session.Session, selectedID string) SessionD
 	listKeyMap.DownOneItem = keyMap.Next
 	listKeyMap.UpOneItem = keyMap.Previous
 
-	items := make([]list.CompletionItem[session.Session], len(sessions))
+	items := make([]SessionItem, len(sessions))
 	if len(sessions) > 0 {
-		for i, session := range sessions {
-			items[i] = list.NewCompletionItem(session.Title, session, list.WithCompletionID(session.ID))
+		for i, sess := range sessions {
+			isActive := sess.ID == selectedID
+			items[i] = NewSessionItem(sess, isActive)
 		}
 	}
 
@@ -153,7 +154,7 @@ func (s *sessionDialogCmp) style() lipgloss.Style {
 }
 
 func (s *sessionDialogCmp) listHeight() int {
-	return s.wHeight/2 - 6 // 5 for the border, title and help
+	return s.wHeight/2 - 6
 }
 
 func (s *sessionDialogCmp) listWidth() int {
