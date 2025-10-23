@@ -2,10 +2,13 @@ package prompt
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/crush/internal/config"
 	"github.com/charmbracelet/crush/internal/home"
+	"github.com/stretchr/testify/require"
 )
 
 func TestExpandPath(t *testing.T) {
@@ -66,4 +69,80 @@ func TestExpandPath(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetGlobalContext(t *testing.T) {
+	t.Run("returns empty string when file does not exist", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		t.Setenv("XDG_CONFIG_HOME", tmpDir)
+
+		result := getGlobalContext()
+		require.Empty(t, result)
+	})
+
+	t.Run("returns content when file exists", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		t.Setenv("XDG_CONFIG_HOME", tmpDir)
+
+		globalPath := config.GlobalContextPath()
+		require.NoError(t, os.MkdirAll(filepath.Dir(globalPath), 0o755))
+
+		content := "# Global coding preferences\n- Use tabs for indentation\n- Prefer functional programming"
+		require.NoError(t, os.WriteFile(globalPath, []byte(content), 0o644))
+
+		result := getGlobalContext()
+		require.Contains(t, result, content)
+		require.Contains(t, result, "# From:")
+	})
+
+	t.Run("returns empty string when file is empty", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		t.Setenv("XDG_CONFIG_HOME", tmpDir)
+
+		globalPath := config.GlobalContextPath()
+		require.NoError(t, os.MkdirAll(filepath.Dir(globalPath), 0o755))
+		require.NoError(t, os.WriteFile(globalPath, []byte(""), 0o644))
+
+		result := getGlobalContext()
+		require.Empty(t, result)
+	})
+}
+
+func TestCoderPromptWithGlobalContext(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+
+	workDir := t.TempDir()
+	_, err := config.Init(workDir, filepath.Join(workDir, ".crush"), false)
+	require.NoError(t, err)
+
+	t.Run("includes global context when file exists", func(t *testing.T) {
+		globalPath := config.GlobalContextPath()
+		require.NoError(t, os.MkdirAll(filepath.Dir(globalPath), 0o755))
+
+		globalContent := "# Global preferences\n- Always use semantic commits"
+		require.NoError(t, os.WriteFile(globalPath, []byte(globalContent), 0o644))
+
+		prompt := CoderPrompt("anthropic")
+		require.Contains(t, prompt, "Global Context")
+		require.Contains(t, prompt, globalContent)
+	})
+
+	t.Run("includes both global and project context", func(t *testing.T) {
+		globalPath := config.GlobalContextPath()
+		require.NoError(t, os.MkdirAll(filepath.Dir(globalPath), 0o755))
+
+		globalContent := "# Global preferences\n- Use tabs"
+		require.NoError(t, os.WriteFile(globalPath, []byte(globalContent), 0o644))
+
+		projectContextPath := filepath.Join(workDir, "CRUSH.md")
+		projectContent := "# Project preferences\n- Use spaces"
+		require.NoError(t, os.WriteFile(projectContextPath, []byte(projectContent), 0o644))
+
+		prompt := CoderPrompt("anthropic", projectContextPath)
+		require.Contains(t, prompt, "Global Context")
+		require.Contains(t, prompt, globalContent)
+		require.Contains(t, prompt, "Project Context")
+		require.Contains(t, prompt, projectContent)
+	})
 }
