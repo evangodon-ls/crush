@@ -354,6 +354,13 @@
           "type": "boolean",
           "description": "Disable sending metrics",
           "default": false
+        },
+        "post_prompt_hook": {
+          "type": "string",
+          "description": "Shell command to execute after each prompt completes",
+          "examples": [
+            "echo 'Prompt completed'"
+          ]
         }
       },
       "additionalProperties": false,

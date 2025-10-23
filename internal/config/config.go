@@ -168,6 +168,7 @@ type Options struct {
 	DisableProviderAutoUpdate bool         `json:"disable_provider_auto_update,omitempty" jsonschema:"description=Disable providers auto-update,default=false"`
 	Attribution               *Attribution `json:"attribution,omitempty" jsonschema:"description=Attribution settings for generated content"`
 	DisableMetrics            bool         `json:"disable_metrics,omitempty" jsonschema:"description=Disable sending metrics,default=false"`
+	PostPromptHook            string       `json:"post_prompt_hook,omitempty" jsonschema:"description=Shell command to execute after each prompt completes,example=echo 'Prompt completed'"`
 }
 
 type MCPs map[string]MCPConfig
