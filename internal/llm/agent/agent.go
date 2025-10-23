@@ -385,6 +385,7 @@ func (a *agent) Run(ctx context.Context, sessionID string, content string, attac
 			slog.Debug("Request completed", "sessionID", sessionID)
 		}
 		a.eventPromptResponded(sessionID, time.Since(startTime).Truncate(time.Second))
+		a.executePostPromptHook(ctx)
 		a.activeRequests.Del(sessionID)
 		cancel()
 		a.Publish(pubsub.CreatedEvent, result)
@@ -964,6 +965,52 @@ func (a *agent) ClearQueue(sessionID string) {
 		slog.Info("Clearing queued prompts", "session_id", sessionID)
 		a.promptQueue.Del(sessionID)
 	}
+}
+
+func (a *agent) executePostPromptHook(ctx context.Context) {
+	cfg := config.Get()
+	if cfg.Options == nil || cfg.Options.PostPromptHook == "" {
+		return
+	}
+
+	if a.isTerminalFocused(ctx) {
+		slog.Debug("Terminal is focused, skipping post-prompt hook")
+		return
+	}
+
+	hookCmd := cfg.Options.PostPromptHook
+	slog.Debug("Executing post-prompt hook", "command", hookCmd)
+
+	sh := shell.NewShell(nil)
+	stdout, stderr, err := sh.Exec(ctx, hookCmd)
+	if err != nil {
+		slog.Error("Post-prompt hook failed", "error", err, "command", hookCmd, "stderr", stderr)
+		return
+	}
+
+	if stdout != "" {
+		slog.Debug("Post-prompt hook completed successfully", "stdout", stdout)
+	}
+}
+
+func (a *agent) isTerminalFocused(ctx context.Context) bool {
+	sh := shell.NewShell(nil)
+	stdout, _, err := sh.Exec(ctx, "osascript -e 'tell application \"System Events\" to get name of first application process whose frontmost is true'")
+	if err != nil {
+		slog.Debug("Failed to check focused application", "error", err)
+		return false
+	}
+
+	frontmost := strings.TrimSpace(stdout)
+	terminalApps := []string{"Terminal", "iTerm2", "Warp", "Alacritty", "kitty", "Hyper", "WezTerm"}
+
+	for _, app := range terminalApps {
+		if frontmost == app {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (a *agent) CancelAll() {
